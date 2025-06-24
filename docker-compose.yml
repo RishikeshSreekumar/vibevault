@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app # Mount code for development; remove for production image focus
+    env_file:
+      - ./backend/.env # Loads environment variables from the backend's .env file
+    depends_on:
+      db:
+        condition: service_healthy # Waits for DB to be ready
+    networks:
+      - songnet
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # For development with hot-reloading
+    # The Dockerfile CMD is fine for production-like behavior or if not using local volume mount for code.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Example: How to pass build-time args for NEXT_PUBLIC_API_URL if needed for build
+        # NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app # Mount code for development; remove for production image focus
+      - /app/node_modules # Don't mount local node_modules over the container's
+      - /app/.next # Don't mount local .next over the container's build
+    environment:
+      # This is the runtime environment variable for the Next.js app
+      - NEXT_PUBLIC_API_URL=http://backend:8000 # Frontend talks to backend service name
+      - NODE_ENV=development # Set to 'production' for production builds/runs
+    depends_on:
+      - backend
+    networks:
+      - songnet
+    # command: npm run dev # For development with hot-reloading
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Persist data
+    ports:
+      - "5432:5432" # Expose DB port to host (optional, for direct access)
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-user} # Use from .env or default
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-songdb_dev}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-songdb_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - songnet
+
+volumes:
+  postgres_data: # Define the named volume for DB persistence
+
+networks:
+  songnet:
+    driver: bridge
+
+# Instructions for use:
+# 1. Create a .env file in the `backend` directory with DATABASE_URL and ADMIN_API_KEY.
+#    Example for DATABASE_URL in backend/.env, matching docker-compose:
+#    DATABASE_URL="postgresql://user:password@db:5432/songdb_dev"
+#    ADMIN_API_KEY="your_secret_admin_key"
+#
+# 2. (Optional) Create a root .env file for POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#    if you want to override defaults for the 'db' service.
+#
+# 3. Run `docker-compose build`
+# 4. Run `docker-compose up -d` (or `docker-compose up` to see logs)
+#
+# 5. Apply backend migrations after the DB is up and backend is running (first time):
+#    `docker-compose exec backend alembic upgrade head`
+#
+# Access frontend at http://localhost:3000
+# Access backend API at http://localhost:8000/docs
+#
+# For development, the volume mounts will sync local code changes.
+# Frontend: `npm install` should be run locally first if node_modules is not populated by Dockerfile.
+# The Dockerfile for frontend does run `npm install`. The volume mount for node_modules helps avoid issues.
+#
+# For production, remove the code volume mounts from backend and frontend services,
+# and rely on the built image. Set NODE_ENV=production for the frontend.
+# The CMD in Dockerfiles are more production-like. The `command` overrides in compose are for dev.

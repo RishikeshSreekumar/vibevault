@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic[email] # For HttpUrl validation, though [email] also brings it
+python-dotenv
+alembic
+# For Pydantic v1, pydantic[email] is fine.
+# For Pydantic v2, just 'pydantic' and ensure 'email-validator' is installed if strict email/url validation is needed,
+# or rely on its built-in validation which is good for many cases.
+# psycopg2-binary is for PostgreSQL connection.
+# python-dotenv for loading .env files.
+# alembic for database migrations.
