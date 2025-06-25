@@ -50,7 +50,12 @@ export default function HomePage() {
           <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
             Browse your favorite tunes.
           </p>
-          <div className="mt-4">
+          <div className="mt-6 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <Link href="/songs" legacyBehavior>
+              <a className="px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition duration-150 ease-in-out text-lg">
+                Browse All Songs
+              </a>
+            </Link>
             <Link href="/admin" legacyBehavior>
               <a className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out">
                 Admin Panel
@@ -58,6 +63,17 @@ export default function HomePage() {
             </Link>
           </div>
         </header>
+
+        {/* Informational message about the main page if needed, or remove some content */}
+        <div className="text-center my-8 py-6 bg-white dark:bg-slate-800 rounded-xl shadow-md">
+            <p className="text-lg text-gray-700 dark:text-gray-300">
+                This main page shows a small selection of songs.
+            </p>
+            <p className="text-lg text-gray-700 dark:text-gray-300 mt-2">
+                Click "Browse All Songs" to see the full directory with filters and pagination.
+            </p>
+        </div>
+
 
         {isLoading && (
           <div className="text-center py-10">

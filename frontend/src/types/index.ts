@@ -30,3 +30,19 @@ export type SongCreateInput = Omit<Song, 'id' | 'created_at' | 'updated_at'> & {
 
 // For updating songs, all fields are optional
 export type SongUpdateInput = Partial<SongCreateInput>;
+
+// Matches backend's SongFilterParams schema for query parameters
+export interface SongFilterParams {
+  title?: string;
+  singer?: string;
+  album?: string;
+  composer?: string;
+  genre?: string;
+  release_year?: number;
+}
+
+// Matches backend's PaginatedSongs response schema
+export interface PaginatedSongs {
+  total_count: number;
+  songs: Song[];
+}

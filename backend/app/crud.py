@@ -1,12 +1,35 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import extract
 from . import models, schemas
 import uuid
 
 def get_song(db: Session, song_id: uuid.UUID):
     return db.query(models.Song).filter(models.Song.id == song_id).first()
 
-def get_songs(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Song).offset(skip).limit(limit).all()
+def _apply_filters(query, filters: schemas.SongFilterParams):
+    if filters.title:
+        query = query.filter(models.Song.title.ilike(f"%{filters.title}%"))
+    if filters.singer:
+        query = query.filter(models.Song.singer.ilike(f"%{filters.singer}%"))
+    if filters.album:
+        query = query.filter(models.Song.album.ilike(f"%{filters.album}%"))
+    if filters.composer:
+        query = query.filter(models.Song.composer.ilike(f"%{filters.composer}%"))
+    if filters.genre:
+        query = query.filter(models.Song.genre.ilike(f"%{filters.genre}%"))
+    if filters.release_year:
+        query = query.filter(extract('year', models.Song.release_date) == filters.release_year)
+    return query
+
+def get_songs(db: Session, filters: schemas.SongFilterParams, skip: int = 0, limit: int = 100):
+    query = db.query(models.Song)
+    query = _apply_filters(query, filters)
+    return query.order_by(models.Song.title).offset(skip).limit(limit).all()
+
+def get_songs_count(db: Session, filters: schemas.SongFilterParams):
+    query = db.query(models.Song.id) # Query for ID only for efficiency
+    query = _apply_filters(query, filters)
+    return query.count()
 
 def create_song(db: Session, song: schemas.SongCreate):
     db_song = models.Song(
