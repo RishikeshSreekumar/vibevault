@@ -33,3 +33,17 @@ class Song(SongBase):
         orm_mode = True # Changed from from_attributes = True for Pydantic v1 compatibility
         # if using Pydantic v2, it would be:
         # from_attributes = True
+
+# For query parameters in the GET /songs/ endpoint
+class SongFilterParams(BaseModel):
+    title: Optional[str] = None
+    singer: Optional[str] = None
+    album: Optional[str] = None
+    composer: Optional[str] = None
+    genre: Optional[str] = None
+    release_year: Optional[int] = None
+
+# New response model for paginated songs
+class PaginatedSongs(BaseModel):
+    total_count: int
+    songs: list[Song]

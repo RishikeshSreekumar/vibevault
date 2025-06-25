@@ -15,13 +15,32 @@ app = FastAPI(title="Song Directory API", version="0.1.0")
 
 # --- Public Endpoints ---
 
-@app.get("/songs/", response_model=List[schemas.Song], tags=["Songs"])
-def read_songs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+@app.get("/songs/", response_model=schemas.PaginatedSongs, tags=["Songs"])
+def read_songs(
+    skip: int = 0,
+    limit: int = 100,
+    title: str = None,
+    singer: str = None,
+    album: str = None,
+    composer: str = None,
+    genre: str = None,
+    release_year: int = None,
+    db: Session = Depends(get_db)
+):
     """
-    Retrieve a list of all songs with pagination.
+    Retrieve a list of songs with pagination and filtering.
     """
-    songs = crud.get_songs(db, skip=skip, limit=limit)
-    return songs
+    filters = schemas.SongFilterParams(
+        title=title,
+        singer=singer,
+        album=album,
+        composer=composer,
+        genre=genre,
+        release_year=release_year
+    )
+    songs = crud.get_songs(db, filters=filters, skip=skip, limit=limit)
+    total_count = crud.get_songs_count(db, filters=filters)
+    return schemas.PaginatedSongs(total_count=total_count, songs=songs)
 
 @app.get("/songs/{song_id}", response_model=schemas.Song, tags=["Songs"])
 def read_song(song_id: uuid.UUID, db: Session = Depends(get_db)):
